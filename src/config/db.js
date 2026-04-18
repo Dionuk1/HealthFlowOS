@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 
 async function connectDb() {
-    const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/healthflow_os';
+    const uri = process.env.MONGO_URI;
+
+    if (!uri) {
+        throw new Error('Missing required env var: MONGO_URI (see .env.example)');
+    }
 
     await mongoose.connect(uri, {
         autoIndex: true,
