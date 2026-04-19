@@ -91,6 +91,39 @@ A comprehensive healthcare web application featuring AI-powered smart queue mana
 
 ## 🚀 Quick Start
 
+### 🗄️ MongoDB Setup
+
+**Prerequisites**
+- Install MongoDB locally **or** create a MongoDB Atlas account.
+- Have a valid connection string ready (local `mongodb://...` or Atlas `mongodb+srv://...`).
+
+**Configure `.env`**
+- Create a `.env` file in the project root (or copy `.env.example`).
+- Set the MongoDB connection string using `MONGO_URI`.
+
+Example (local MongoDB):
+```env
+MONGO_URI=mongodb://127.0.0.1:27017/healthflow_os
+```
+
+Example (MongoDB Atlas):
+```env
+MONGO_URI=mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER_HOST>/healthflow_os?retryWrites=true&w=majority
+```
+
+Notes
+- Do **not** commit real credentials or connection strings to GitHub.
+- If your hosting platform provides `MONGODB_URI`, map it to `MONGO_URI` (the app reads `MONGO_URI` by default).
+
+**Database Seeding**
+- After MongoDB is configured:
+```bash
+npm run seed
+```
+
+**Troubleshooting**
+- If you hit `ECONNREFUSED`, make sure the MongoDB service (`mongod`) is running and your `MONGO_URI` points to the correct host/port.
+
 ### 1️⃣ Setup Environment
 ```bash
 cp .env.example .env
@@ -99,9 +132,11 @@ cp .env.example .env
 **Key settings:**
 ```
 JWT_SECRET=your-secret-key-here
-MEDICAL_AES_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+MEDICAL_AES_KEY=<64_hex_chars>
 MONGO_URI=mongodb://127.0.0.1:27017/healthflow_os
 ```
+
+Note: Secrets/keys should be provided via environment variables and generated during local setup. Do not hard-code real keys in documentation.
 
 ### 2️⃣ Install Dependencies
 ```bash
@@ -120,7 +155,11 @@ Creates 5 specialist doctors with real services:
 - Dr. Nura Rama (General Practice)
 - Dr. Mirela Duka (Psychiatry)
 
-Plus: admin@healthflow.test, patient@healthflow.test (both: password123)
+Plus: admin@healthflow.test, patient@healthflow.test (demo accounts)
+
+Passwords are defined in environment variables or generated during local setup.
+
+Tip: Set `SEED_DEFAULT_PASSWORD` (and optionally `SEED_ADMIN_PASSWORD`, `SEED_PATIENT_PASSWORD`, `SEED_DOCTOR_PASSWORD`) in your `.env` before running `npm run seed` to keep demo logins stable across runs.
 
 ### 4️⃣ Start Server
 ```bash
@@ -341,7 +380,7 @@ POST /api/admin/doctors
 {
   "name": "Dr. New Specialist",
   "email": "new@healthflow.test",
-  "password": "securePassword123",
+  "password": "<PASSWORD>",
   "specialization": "emergency",
   "department": "Emergency Department",
   "experience": 20,
@@ -397,6 +436,20 @@ DELETE /api/admin/doctors/:id
 
 ---
 
+## 🚀 Advanced Features
+
+### AI & Smart Services
+- **Symptom Checker (AI-assisted triage):** Analyzes symptoms (Albanian/English) and returns a suggested department, urgency level, and confidence score; the UI can then fetch and show recommended doctors for that department.
+- **Predictive Queue (real-time wait estimation):** Estimates waiting time from active appointments/queue state, classifies load (low/medium/high), and supports smart doctor recommendations.
+- **Medical Chatbot (RAG):** Uses Retrieval-Augmented Generation by retrieving relevant clinic context from MongoDB (e.g., doctor directory and appointment context) and generating grounded answers; falls back safely when AI providers are not configured.
+
+### Cybersecurity & Protection
+- **AI Fraud Detection:** Detects suspicious patterns such as API bursts and repeated probing; flags incidents like `RATE_LIMIT_EXCEEDED` and `SUSPICIOUS_PATTERN_DETECTED` for monitoring and response.
+- **Rate Limiting:** Applies per-IP thresholds and temporary bans to reduce DoS/brute-force risk; limits are configurable via environment variables.
+- **Data Encryption (AES-256):** Encrypts sensitive medical data using AES-256; encryption secrets belong in environment variables and should never be committed to source control.
+
+---
+
 ## ⚙️ Smart Queue Algorithm
 
 ```
@@ -449,7 +502,7 @@ DELETE /api/admin/doctors/:id
   // Login
   const user = await hfClient.login(
     'patient@healthflow.test',
-    'password123',
+    '<PASSWORD>',
     'patient'
   );
 
@@ -567,7 +620,7 @@ curl -X POST http://localhost:5500/api/appointments/recommend \
 # 5. Login as patient
 TOKEN=$(curl -X POST http://localhost:5500/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"patient@healthflow.test","password":"password123","role":"patient"}' \
+  -d '{"email":"patient@healthflow.test","password":"<PASSWORD>","role":"patient"}' \
   | jq -r '.token')
 
 # 6. Get dashboard
